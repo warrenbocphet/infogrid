@@ -20,6 +20,6 @@ SMMRY, public API for text summarisation: ```https://smmry.com/```
 # Road map
 1. Creating a public API + website
 2. Develop ~~summarisation~~ + keywords extraction in-house instead of using other framework
-3. Add Docker files
+3. ~~Add Docker files~~
 4. Deploy to AWS
 5. OpenAPI compliance
