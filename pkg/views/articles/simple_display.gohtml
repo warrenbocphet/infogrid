@@ -1,0 +1,13 @@
+{{define "display"}}
+    <p>All tags: {{.Tags}}</p>
+    {{range .Articles}}
+        <p>-----------------------------</p>
+        <p>URL: {{.URL}}</p>
+        <p>Title: {{.Title}}</p>
+        <p>Section {{.Section}}</p>
+        <p>Tags: {{.Tags}}</p>
+        <p>DateCreated {{.DateCreated}}</p>
+        <p>SummarisedText {{.SummarisedText}}</p>
+        <p>-----------------------------</p>
+    {{end}}
+{{end}}

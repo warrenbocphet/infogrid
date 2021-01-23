@@ -1,0 +1,27 @@
+version: "3.8"
+services:
+  mongo:
+    image: mongo
+    ports:
+      - 27018:27017
+    volumes:
+      - mongodb:/data/db
+
+  mongo-express:
+    image: mongo-express
+    ports:
+      - 8081:8081
+
+  app:
+    image: go_app
+    ports:
+      - 8000:8000
+    environment:
+      - MONGO_HST=mongo
+      - MONGO_PRT=27017
+      - DEPLOYMENT=TRUE
+      - NYTIMES_KEY=MY_SECRET_KEY
+
+volumes:
+  mongodb:
+    external: true
