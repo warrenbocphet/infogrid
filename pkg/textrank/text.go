@@ -28,7 +28,6 @@ var punctuationMarks = map[string]struct{}{
 	"\"": {},
 }
 
-
 // Sentence struct is part of Text struct, and it is the unit of Text Rank
 type Sentence struct {
 	Text string // Almost original text. Text has all the '\n', '\t',
@@ -107,7 +106,11 @@ func (t *Text) doRanking() {
 
 			currentScore := 0.0
 			for neighborID, weight := range node.Neighbors {
-				currentScore += 1 / (t.graph.Nodes[neighborID].Value) * weight * t.Sentences[neighborID].Score
+				if t.graph.Nodes[neighborID].Value == 0 {
+					continue
+				}
+
+				currentScore += weight / (t.graph.Nodes[neighborID].Value) * t.Sentences[neighborID].Score
 			}
 			currentScore = currentScore*t.dampingFactor + (1 - t.dampingFactor)
 
