@@ -132,7 +132,6 @@ func (t *Text) doRanking() {
 		}
 
 	}
-
 }
 
 // Two tasks:
@@ -350,12 +349,12 @@ func NewText(text string, lemmaDict map[string]string) (*Text, error) {
 func tokenizeSentenceToWords(sentence string, opts ...string) []string {
 	words := make(map[string]struct{})
 	var word string
-	for i := range sentence {
-		if sentence[i] == ' ' {
+	for i, c := range sentence {
+		if c == ' ' {
 			words[word] = struct{}{}
 			word = ""
 		} else {
-			word = word + string(sentence[i])
+			word = word + string(c)
 		}
 
 		if i == (len(sentence) - 1) {
