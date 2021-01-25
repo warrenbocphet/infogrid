@@ -34,10 +34,27 @@ type Articles struct {
 	ArticleView *articles.View
 }
 
+func (a *Articles) SummariseArticle(article models.ArticleInterface) {
+	_, err := a.db.ByURL(article.GetURL()) // Check if the article is already in the DB
+	if err == mongo.ErrNoDocuments {       // If true, the article is not in DB
+		if article.GetSummarised() == "" { // Only summarise the text if it has not been summarised
+			t, err := textrank.NewText(article.GetText(), nil)
+			if err == nil {
+				summarisedText := t.Summarise(0.05)
+				article.SetSummarised(summarisedText)
+			}
+		}
+	} else {
+		return
+	}
+
+	_ = a.db.InsertArticle(article)
+}
+
 // CaptureArticles will be called by RunPeriodicCapture at every constant
 // time period. This is exported for debugging purposes in main.go
 func (a *Articles) CaptureArticles() {
-	var as []models.ArticleInterface
+	//var as []models.ArticleInterface
 
 	// Get the articles from selected sections
 	// and then get the summarised version of the text
@@ -45,26 +62,28 @@ func (a *Articles) CaptureArticles() {
 		err := api.GenerateArticles()
 		if err == nil {
 			for _, article := range api.GetArticles() {
-				_, err = a.db.ByURL(article.GetURL())
-				if err == mongo.ErrNoDocuments {
-					if article.GetSummarised() == "" {
-						t, err := textrank.NewText(article.GetText(), nil)
-						if err == nil {
-							summarisedText := t.Summarise(0.05)
-							article.SetSummarised(summarisedText)
+				//_, err = a.db.ByURL(article.GetURL()) // Check if the article is already in the DB
+				//if err == mongo.ErrNoDocuments { // If true, the article is not in DB
+				//	if article.GetSummarised() == "" { // Only summarise the text if it has not been summarised
+				//		t, err := textrank.NewText(article.GetText(), nil)
+				//		if err == nil {
+				//			summarisedText := t.Summarise(0.05)
+				//			article.SetSummarised(summarisedText)
+				//
+				//		}
+				//	}
+				//	as = append(as, article)
+				//}
 
-						}
-					}
-					as = append(as, article)
-				}
+				a.SummariseArticle(article)
 			}
 		}
 	}
-
-	// Insert the article into the database
-	for _, article := range as {
-		_ = a.db.InsertArticle(article)
-	}
+	//
+	//// Insert the article into the database
+	//for _, article := range as {
+	//	_ = a.db.InsertArticle(article)
+	//}
 }
 
 func (a *Articles) CaptureTags() {
@@ -140,7 +159,7 @@ func (a *Articles) GetArticles(w http.ResponseWriter, r *http.Request) {
 
 		var filteredArticles []models.Article
 		for i := range allArticles {
-			if section != allArticles[i].Section {
+			if section != allArticles[i].Section && section != "" {
 				continue
 			}
 
