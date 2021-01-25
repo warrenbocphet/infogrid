@@ -125,28 +125,86 @@ func (a *Articles) ShowArticles(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (a *Articles) ShowArticlesJSON(w http.ResponseWriter, r *http.Request) {
-	as, err := a.db.AllArticles()
-	must(err)
-
-	type Data struct {
-		Tags     []string
-		Articles []models.Article
-	}
-
-	data := Data{a.tags, as}
-
+func (a *Articles) GetArticles(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
+		allArticles, err := a.db.AllArticles()
+		must(err)
+
+		section := r.FormValue("section")
+		tag := r.FormValue("tag")
+
+		var filteredArticles []models.Article
+		for i := range allArticles {
+			if section != allArticles[i].Section {
+				continue
+			}
+
+			if tag != "" {
+				for j := range allArticles[i].Tags {
+					if tag == allArticles[i].Tags[j] {
+						filteredArticles = append(filteredArticles, allArticles[i])
+						break
+					}
+				}
+			} else {
+				filteredArticles = append(filteredArticles, allArticles[i])
+			}
+		}
+
 		encoder := json.NewEncoder(w)
 		encoder.SetIndent("", "    ")
-		err = encoder.Encode(data)
-		//err = json.NewEncoder(w).Encode(data)
+		err = encoder.Encode(&filteredArticles)
 		if err != nil {
 			_, _ = fmt.Fprintf(w, "Sorry! Internal error. If you can tell me about this, it would be great!")
 		}
+
 	default:
 		_, _ = fmt.Fprintf(w, "The request is not supported.")
+	}
+}
+
+func (a *Articles) GetTags(w http.ResponseWriter, r *http.Request) {
+	uniqueTags := make(map[string]struct{})
+
+	allArticles, err := a.db.AllArticles()
+	must(err)
+
+	for i := range allArticles {
+		for j := range allArticles[i].Tags {
+			uniqueTags[allArticles[i].Tags[j]] = struct{}{}
+		}
+	}
+
+	tags := make([]string, 0, len(uniqueTags)) // Create a slice with length 0 and capacity = len(uniqueTags)
+	for tag := range uniqueTags {
+		tags = append(tags, tag)
+	}
+
+	err = json.NewEncoder(w).Encode(&tags)
+	if err != nil {
+		_, _ = fmt.Fprintf(w, "Sorry! Internal error. If you can tell me about this, it would be great!")
+	}
+}
+
+func (a *Articles) GetSections(w http.ResponseWriter, r *http.Request) {
+	uniqueSections := make(map[string]struct{})
+
+	allArticles, err := a.db.AllArticles()
+	must(err)
+
+	for i := range allArticles {
+		uniqueSections[allArticles[i].Section] = struct{}{}
+	}
+
+	sections := make([]string, 0, len(uniqueSections))
+	for section := range uniqueSections {
+		sections = append(sections, section)
+	}
+
+	err = json.NewEncoder(w).Encode(&sections)
+	if err != nil {
+		_, _ = fmt.Fprintf(w, "Sorry! Internal error. If you can tell me about this, it would be great!")
 	}
 }
 

@@ -60,7 +60,7 @@ type Article struct {
 	Title          string   `bson:"title,omitempty"`
 	Section        string   `bson:"section,omitempty"`
 	DateCreated    string   `bson:"date_created,omitempty"`
-	Text           string   `bson:"text,omitempty"`
+	Text           string   `bson:"text,omitempty" json:"-"`
 	SummarisedText string   `bson:"summarised_text,omitempty"`
 	Tags           []string `bson:"tags,omitempty"`
 }

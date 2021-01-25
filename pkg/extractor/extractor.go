@@ -16,7 +16,7 @@ var (
 		"mrs.",
 	}
 
-	commonString = []string{
+	commonString = []string{ // Used to filter out the common tags
 		"congress",
 		"state",
 		"department",

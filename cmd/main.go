@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/vitsensei/infogrid/pkg/controller"
 	"github.com/vitsensei/infogrid/pkg/models"
@@ -11,7 +10,6 @@ import (
 	"os"
 	"time"
 )
-
 
 var (
 	//mongoURI = "mongodb://localhost:27017/"
@@ -25,9 +23,10 @@ func main() {
 	defer adb.Close()
 	must(err)
 
-	err = adb.DestructiveReset()
-	must(err)
-	fmt.Println("Finished deleting previous database")
+	//err = adb.DestructiveReset()
+	//must(err)
+	//fmt.Println("Finished deleting previous database")
+
 	// Create API and controller
 	nytimesAPI := nytimes.NewAPI()
 	must(err)
@@ -36,12 +35,16 @@ func main() {
 
 	ac := controller.NewArticleController(adb, views, nytimesAPI)
 
-	go ac.RunPeriodicCapture(4)
+	//go ac.RunPeriodicCapture(4)
 
 	// Create router
 	r := mux.NewRouter()
 	r.HandleFunc("/", ac.ShowArticles)
-	r.HandleFunc("/articles", ac.ShowArticlesJSON)
+	r.HandleFunc("/tags", ac.GetTags)
+	r.HandleFunc("/sections", ac.GetSections)
+	r.HandleFunc("/articles", ac.GetArticles)
+	r.Path("/articles").Queries("section", "{section}").HandlerFunc(ac.GetArticles)
+
 	http.Handle("/", r)
 
 	srv := &http.Server{
