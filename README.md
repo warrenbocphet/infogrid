@@ -15,8 +15,6 @@ Extracting keywords, might remove in the future: ```gopkg.in/jdkato/prose.v2```
 
 For parsing HTML file: ```golang.org/x/net/html```
 
-SMMRY, public API for text summarisation: ```https://smmry.com/```
-
 # Road map
 1. Creating a public API + website
 2. Develop ~~summarisation~~ + keywords extraction in-house instead of using other framework
