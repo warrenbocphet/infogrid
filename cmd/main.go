@@ -19,6 +19,7 @@ func main() {
 	// Create Database
 	adb := models.NewDB()
 	err := adb.Init(mongoURI)
+	//adb.DestructiveReset()
 	defer adb.Close()
 	must(err)
 
