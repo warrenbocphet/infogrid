@@ -9,12 +9,14 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 )
 
 var (
 	apiKey             = os.Getenv("NYTIMES_KEY")
 	partialTopStoryURL = "https://api.nytimes.com/svc/topstories/v2/home.json?api-key="
+	wg                 sync.WaitGroup
 )
 
 /*
@@ -184,6 +186,20 @@ func ExtractText(url string) (string, error) {
 	return paragraph, nil
 }
 
+func GenerateArticleText(article *Article) {
+	defer wg.Done()
+
+	text, _ := ExtractText(article.URL)
+	if text != "" {
+		article.Text = text
+
+		tags, err := extractor.ExtractTags(text, 3)
+		if err == nil {
+			article.Tags = tags
+		}
+	}
+}
+
 //	Construct the Article list (TopStories struct).
 //	Each Article in the list will only contain the URL, Section, and Title
 //	after this call. These are the value returned from NYTimes API.
@@ -213,18 +229,18 @@ func (a *API) GenerateArticles() error {
 
 	a.FilterBySections()
 
+	// Extract text from URL
+	for i := range a.TopStories.Articles {
+		wg.Add(1)
+		go GenerateArticleText(&a.TopStories.Articles[i])
+	}
+
+	wg.Wait()
+
 	// Filter out the node that is interactive ~= article.text == ""
 	var articleWithText []Article
 	for i := range a.TopStories.Articles {
-		text, _ := ExtractText(a.TopStories.Articles[i].URL)
-		if text != "" {
-			a.TopStories.Articles[i].Text = text
-
-			tags, err := extractor.ExtractTags(text, 3)
-			if err == nil {
-				a.TopStories.Articles[i].Tags = tags
-			}
-
+		if a.TopStories.Articles[i].Text != "" {
 			articleWithText = append(articleWithText, a.TopStories.Articles[i])
 		}
 	}

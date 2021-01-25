@@ -8,7 +8,13 @@ import (
 	"github.com/vitsensei/infogrid/pkg/views/articles"
 	"go.mongodb.org/mongo-driver/mongo"
 	"net/http"
+	"sync"
 	"time"
+)
+
+var (
+	dbMu sync.Mutex
+	wg   sync.WaitGroup
 )
 
 type API interface {
@@ -16,53 +22,64 @@ type API interface {
 	GetArticles() []models.ArticleInterface
 }
 
-func NewArticleController(db *models.ArticleDB, v *articles.View, api ...API) Articles {
+func NewArticleController(db *models.ArticleDB, v *articles.View, numberOfArticles int, api ...API) Articles {
 	return Articles{
-		apis:        api,
-		db:          db,
-		ArticleView: v,
+		apis:             api,
+		db:               db,
+		ArticleView:      v,
+		numberOfArticles: numberOfArticles,
 	}
 }
 
 type Articles struct {
-	apis []API
-	tags []string
-	db   *models.ArticleDB
+	apis             []API
+	tags             []string
+	db               *models.ArticleDB
+	numberOfArticles int // maximum number of articles in the database
 
 	ArticleView *articles.View
+}
+
+func (a *Articles) SummariseArticle(article models.ArticleInterface) {
+	defer wg.Done()
+
+	dbMu.Lock()
+	_, err := a.db.ByURL(article.GetURL()) // Check if the article is already in the DB
+	dbMu.Unlock()
+
+	if err == mongo.ErrNoDocuments { // If true, the article is not in DB
+		if article.GetSummarised() == "" { // Only summarise the text if it has not been summarised
+			t, err := textrank.NewText(article.GetText(), nil)
+			if err == nil {
+				summarisedText := t.Summarise(0.05)
+				article.SetSummarised(summarisedText)
+			}
+		}
+	} else {
+		return
+	}
+
+	dbMu.Lock()
+	_ = a.db.InsertArticle(article)
+	dbMu.Unlock()
 }
 
 // CaptureArticles will be called by RunPeriodicCapture at every constant
 // time period. This is exported for debugging purposes in main.go
 func (a *Articles) CaptureArticles() {
-	var as []models.ArticleInterface
-
 	// Get the articles from selected sections
 	// and then get the summarised version of the text
 	for _, api := range a.apis {
 		err := api.GenerateArticles()
 		if err == nil {
 			for _, article := range api.GetArticles() {
-				_, err = a.db.ByURL(article.GetURL())
-				if err == mongo.ErrNoDocuments {
-					if article.GetSummarised() == "" {
-						t, err := textrank.NewText(article.GetText(), nil)
-						if err == nil {
-							summarisedText := t.Summarise(0.05)
-							article.SetSummarised(summarisedText)
-
-						}
-					}
-					as = append(as, article)
-				}
+				wg.Add(1)
+				go a.SummariseArticle(article)
 			}
 		}
 	}
 
-	// Insert the article into the database
-	for _, article := range as {
-		_ = a.db.InsertArticle(article)
-	}
+	wg.Wait()
 }
 
 func (a *Articles) CaptureTags() {
@@ -94,6 +111,7 @@ func (a *Articles) RunPeriodicCapture(interval int) {
 	a.CaptureArticles()
 	a.CaptureTags()
 	fmt.Println("New articles captured after", time.Since(start))
+	a.db.CleanOldArticles(a.numberOfArticles)
 	go func() {
 		for {
 			select {
@@ -102,6 +120,7 @@ func (a *Articles) RunPeriodicCapture(interval int) {
 				a.CaptureArticles()
 				a.CaptureTags()
 				fmt.Println("New articles captured after", time.Since(start))
+				a.db.CleanOldArticles(a.numberOfArticles)
 			}
 		}
 	}()
@@ -109,7 +128,7 @@ func (a *Articles) RunPeriodicCapture(interval int) {
 	select {}
 }
 
-func (a *Articles) ShowArticles(w http.ResponseWriter, r *http.Request) {
+func (a *Articles) ShowArticles(w http.ResponseWriter, _ *http.Request) {
 	as, err := a.db.AllArticles()
 	must(err)
 
@@ -136,7 +155,7 @@ func (a *Articles) GetArticles(w http.ResponseWriter, r *http.Request) {
 
 		var filteredArticles []models.Article
 		for i := range allArticles {
-			if section != allArticles[i].Section {
+			if section != allArticles[i].Section && section != "" {
 				continue
 			}
 
@@ -164,7 +183,7 @@ func (a *Articles) GetArticles(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (a *Articles) GetTags(w http.ResponseWriter, r *http.Request) {
+func (a *Articles) GetTags(w http.ResponseWriter, _ *http.Request) {
 	uniqueTags := make(map[string]struct{})
 
 	allArticles, err := a.db.AllArticles()
@@ -187,7 +206,7 @@ func (a *Articles) GetTags(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (a *Articles) GetSections(w http.ResponseWriter, r *http.Request) {
+func (a *Articles) GetSections(w http.ResponseWriter, _ *http.Request) {
 	uniqueSections := make(map[string]struct{})
 
 	allArticles, err := a.db.AllArticles()
