@@ -5,6 +5,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"sort"
+	"time"
 )
 
 type ArticleDB struct {
@@ -191,4 +193,48 @@ func (adb *ArticleDB) BySections(sections []string) ([]Article, error) {
 // Query the articles by tags
 func (adb *ArticleDB) ByTags(tags []string) ([]Article, error) {
 	return adb.BySectionsAndTags([]string{}, tags)
+}
+
+type Articles []Article
+
+func (as Articles) Len() int {
+	return len(as)
+}
+
+func (as Articles) Less(i, j int) bool {
+	layout := "2006-01-02 15:04:05 -0700 MST"
+	time1, err := time.Parse(layout, as[i].DateCreated)
+	if err != nil {
+		return true
+	}
+
+	time2, err := time.Parse(layout, as[j].DateCreated)
+	if err != nil {
+		return true
+	}
+
+	return time1.Before(time2)
+}
+
+func (as Articles) Swap(i, j int) {
+	as[i], as[j] = as[j], as[i]
+}
+
+// Delete old articles
+func (adb *ArticleDB) CleanOldArticles(numberOfArticles int) {
+	var articles Articles
+	articles, err := adb.AllArticles()
+	if err != nil {
+		return
+	}
+
+	if len(articles) < numberOfArticles {
+		return
+	}
+
+	sort.Sort(articles)
+	for i := 0; i < len(articles)-numberOfArticles; i++ {
+		_, _ = adb.collection.DeleteOne(adb.ctx, bson.M{"url": articles[i].URL})
+	}
+
 }

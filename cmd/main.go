@@ -12,7 +12,6 @@ import (
 )
 
 var (
-	//mongoURI = "mongodb://localhost:27017/"
 	mongoURI = "mongodb://" + os.Getenv("MONGO_HST") + ":" + os.Getenv("MONGO_PRT") + "/"
 )
 
@@ -23,19 +22,15 @@ func main() {
 	defer adb.Close()
 	must(err)
 
-	//err = adb.DestructiveReset()
-	//must(err)
-	//fmt.Println("Finished deleting previous database")
-
 	// Create API and controller
 	nytimesAPI := nytimes.NewAPI()
 	must(err)
 
 	views := articles.NewView("display", "articles/simple_display")
 
-	ac := controller.NewArticleController(adb, views, nytimesAPI)
+	ac := controller.NewArticleController(adb, views, 25, nytimesAPI)
 
-	//go ac.RunPeriodicCapture(4)
+	go ac.RunPeriodicCapture(4)
 
 	// Create router
 	r := mux.NewRouter()

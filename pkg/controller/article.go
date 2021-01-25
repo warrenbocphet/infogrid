@@ -16,18 +16,20 @@ type API interface {
 	GetArticles() []models.ArticleInterface
 }
 
-func NewArticleController(db *models.ArticleDB, v *articles.View, api ...API) Articles {
+func NewArticleController(db *models.ArticleDB, v *articles.View, numberOfArticles int, api ...API) Articles {
 	return Articles{
-		apis:        api,
-		db:          db,
-		ArticleView: v,
+		apis:             api,
+		db:               db,
+		ArticleView:      v,
+		numberOfArticles: numberOfArticles,
 	}
 }
 
 type Articles struct {
-	apis []API
-	tags []string
-	db   *models.ArticleDB
+	apis             []API
+	tags             []string
+	db               *models.ArticleDB
+	numberOfArticles int // maximum number of articles in the database
 
 	ArticleView *articles.View
 }
@@ -94,6 +96,7 @@ func (a *Articles) RunPeriodicCapture(interval int) {
 	a.CaptureArticles()
 	a.CaptureTags()
 	fmt.Println("New articles captured after", time.Since(start))
+	a.db.CleanOldArticles(a.numberOfArticles)
 	go func() {
 		for {
 			select {
@@ -102,6 +105,7 @@ func (a *Articles) RunPeriodicCapture(interval int) {
 				a.CaptureArticles()
 				a.CaptureTags()
 				fmt.Println("New articles captured after", time.Since(start))
+				a.db.CleanOldArticles(a.numberOfArticles)
 			}
 		}
 	}()
