@@ -1,7 +1,7 @@
 ############################
 # STEP 1: Add source code to generate executable
 ############################
-FROM go_dependencies AS builder
+FROM vitsensei/infogrid_dep AS builder
 
 ADD . .
 
