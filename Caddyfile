@@ -1,0 +1,8 @@
+# The domain used
+www.infogrid.app
+
+# This enables gzip compression.
+encode gzip
+
+# Redirect traffic to localhost:8000, which is where the app is listening
+reverse_proxy localhost:8000
