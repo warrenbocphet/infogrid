@@ -7,6 +7,7 @@ import (
 	"github.com/vitsensei/infogrid/pkg/textrank"
 	"github.com/vitsensei/infogrid/pkg/views/articles"
 	"go.mongodb.org/mongo-driver/mongo"
+	"log"
 	"net/http"
 	"sync"
 	"time"
@@ -22,12 +23,13 @@ type API interface {
 	GetArticles() []models.ArticleInterface
 }
 
-func NewArticleController(db *models.ArticleDB, v *articles.View, numberOfArticles int, api ...API) Articles {
+func NewArticleController(db *models.ArticleDB, v *articles.View, numberOfArticles int, logger *log.Logger, api ...API) Articles {
 	return Articles{
 		apis:             api,
 		db:               db,
 		ArticleView:      v,
 		numberOfArticles: numberOfArticles,
+		logger:           logger,
 	}
 }
 
@@ -38,6 +40,8 @@ type Articles struct {
 	numberOfArticles int // maximum number of articles in the database
 
 	ArticleView *articles.View
+
+	logger *log.Logger
 }
 
 func (a *Articles) SummariseArticle(article models.ArticleInterface) {
@@ -51,7 +55,7 @@ func (a *Articles) SummariseArticle(article models.ArticleInterface) {
 		if article.GetSummarised() == "" { // Only summarise the text if it has not been summarised
 			t, err := textrank.NewText(article.GetText(), nil)
 			if err == nil {
-				summarisedText := t.Summarise(0.05)
+				summarisedText := t.Summarise(0.1)
 				article.SetSummarised(summarisedText)
 			}
 		}
@@ -73,9 +77,12 @@ func (a *Articles) CaptureArticles() {
 		err := api.GenerateArticles()
 		if err == nil {
 			for _, article := range api.GetArticles() {
+				a.logger.Println("[INFO] Captured article with title", article.GetTitle())
 				wg.Add(1)
 				go a.SummariseArticle(article)
 			}
+		} else {
+			a.logger.Println("[ERROR]", err)
 		}
 	}
 
@@ -111,7 +118,7 @@ func (a *Articles) RunPeriodicCapture(interval int) {
 	a.CaptureArticles()
 	a.CaptureTags()
 	fmt.Println("New articles captured after", time.Since(start))
-	a.db.CleanOldArticles(a.numberOfArticles)
+	a.db.CleanOldArticles(a.numberOfArticles, a.logger)
 	go func() {
 		for {
 			select {
@@ -120,7 +127,7 @@ func (a *Articles) RunPeriodicCapture(interval int) {
 				a.CaptureArticles()
 				a.CaptureTags()
 				fmt.Println("New articles captured after", time.Since(start))
-				a.db.CleanOldArticles(a.numberOfArticles)
+				a.db.CleanOldArticles(a.numberOfArticles, a.logger)
 			}
 		}
 	}()

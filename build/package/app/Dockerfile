@@ -18,5 +18,8 @@ COPY --from=builder ./go/src/infogrid/infogrid .
 COPY --from=builder ./go/src/infogrid/pkg/views/articles/*.gohtml ./views/articles/
 COPY --from=builder ./go/src/infogrid/pkg/views/layouts/*.gohtml ./views/layouts/
 
+# Add nano and vim for convenient
+RUN apk add --update nano vim
+
 # Run the infogrid binary.
 ENTRYPOINT ["./infogrid"]

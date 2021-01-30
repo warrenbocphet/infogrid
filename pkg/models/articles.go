@@ -5,6 +5,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"log"
 	"sort"
 	"time"
 )
@@ -117,12 +118,13 @@ func (adb *ArticleDB) AllArticles() ([]Article, error) {
 		return nil, err
 	}
 
-	var articles []Article
+	var articles Articles
 	err = c.All(adb.ctx, &articles)
 	if err != nil {
 		return nil, err
 	}
 
+	sort.Sort(articles)
 	return articles, nil
 
 }
@@ -221,7 +223,7 @@ func (as Articles) Swap(i, j int) {
 }
 
 // Delete old articles
-func (adb *ArticleDB) CleanOldArticles(numberOfArticles int) {
+func (adb *ArticleDB) CleanOldArticles(numberOfArticles int, logger *log.Logger) {
 	var articles Articles
 	articles, err := adb.AllArticles()
 	if err != nil {
@@ -232,9 +234,12 @@ func (adb *ArticleDB) CleanOldArticles(numberOfArticles int) {
 		return
 	}
 
-	sort.Sort(articles)
 	for i := 0; i < len(articles)-numberOfArticles; i++ {
-		_, _ = adb.collection.DeleteOne(adb.ctx, bson.M{"url": articles[i].URL})
+		_, err = adb.collection.DeleteOne(adb.ctx, bson.M{"url": articles[i].URL})
+		if err != nil {
+			logger.Println("[ERROR] Fail to delete article with title", articles[i].Title)
+		} else {
+			logger.Println("[INFO] Delete article with title", articles[i].Title)
+		}
 	}
-
 }
