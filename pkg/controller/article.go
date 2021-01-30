@@ -78,13 +78,11 @@ func (a *Articles) CaptureArticles() {
 		if err == nil {
 			for _, article := range api.GetArticles() {
 				a.logger.Println("[INFO] Captured article with title", article.GetTitle())
-				fmt.Println("[INFO] Captured article with title", article.GetTitle())
 				wg.Add(1)
 				go a.SummariseArticle(article)
 			}
 		} else {
 			a.logger.Println("[ERROR]", err)
-			fmt.Println("[ERROR]", err)
 		}
 	}
 

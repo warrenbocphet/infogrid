@@ -2,7 +2,6 @@ package models
 
 import (
 	"context"
-	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -239,10 +238,8 @@ func (adb *ArticleDB) CleanOldArticles(numberOfArticles int, logger *log.Logger)
 		_, err = adb.collection.DeleteOne(adb.ctx, bson.M{"url": articles[i].URL})
 		if err != nil {
 			logger.Println("[ERROR] Fail to delete article with title", articles[i].Title)
-			fmt.Println("[ERROR] Fail to delete article with title", articles[i].Title)
 		} else {
 			logger.Println("[INFO] Delete article with title", articles[i].Title)
-			fmt.Println("[INFO] Delete article with title", articles[i].Title)
 		}
 	}
 }
