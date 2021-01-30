@@ -15,7 +15,7 @@ Extracting keywords, might remove in the future: ```gopkg.in/jdkato/prose.v2```
 
 For parsing HTML file: ```golang.org/x/net/html```
 
-# REST API
+# Usage
 The application is simply a REST API.
 
 Root URL: www.infogrid.app
