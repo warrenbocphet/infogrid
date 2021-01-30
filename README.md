@@ -27,17 +27,17 @@ Root URL: www.infogrid.app
 
 * **Method**
 
-`GET`
+    `GET`
 
 * **Query params (optional)**
 
-`section=[string]` example: us, world, etc.
+    `section=[string]` example: us, world, etc.
 
-`tag=[string]` example: biden, covid-19, etc.
+    `tag=[string]` example: biden, covid-19, etc.
 
 * **Response**
 
-`curl "https://www.infogrid.app/articles?section=us&tag=biden"`
+    `curl "https://www.infogrid.app/articles?section=us&tag=biden"`
 
 ```
 [
@@ -93,43 +93,43 @@ Root URL: www.infogrid.app
 
 * **Sample call**
 
-`$ curl "https://www.infogrid.app/articles`
+    `$ curl "https://www.infogrid.app/articles`
 
-`$ curl "https://www.infogrid.app/articles?section=us"`
+    `$ curl "https://www.infogrid.app/articles?section=us"`
 
-`$ curl "https://www.infogrid.app/articles?tag=biden"`
+    `$ curl "https://www.infogrid.app/articles?tag=biden"`
 
-`$ curl "https://www.infogrid.app/articles?section=us&tag=biden"`
+    `$ curl "https://www.infogrid.app/articles?section=us&tag=biden"`
 
 ## Show available sections
 
 * **URL**
 
-/sections
+    /sections
 
 * **Method**
 
-`GET`
+    `GET`
 
 * **Response**
 
-`$ curl "https://www.infogrid.app/sections"`
+    `$ curl "https://www.infogrid.app/sections"`
 
-`["technology","world","us","business"]`
+    `["technology","world","us","business"]`
 
 ## Show available tags
 
 * **URL**
 
-/tags
+    /tags
 
 * **Method**
 
-`GET`
+    `GET`
 
 * **Response**
 
-`$ curl "https://www.infogrid.app/tags"`
+    `$ curl "https://www.infogrid.app/tags"`
 
 ```
 ["britain","jimenez","republican","armored division","tesla","latino","josh drobnyk","tibetan","grape-nuts","south carolina","south africa","gamestop","duhamel","kouchner","colonel payne","william beaumont army medical center","greene","food group","biggs","elon musk","russia","university","senate","biden","michelmore","black","tashi","british","parker","putin","musk","west wing","robinhood","portland","melbourne","trump","french","bryan","mccarthy","chinese","covid-19","iraq","gainesville","astrazeneca","white house","yellen","australian open","davis","navalny","gosar","heyman","victoria","united states","barra"]
