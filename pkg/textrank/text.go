@@ -30,10 +30,11 @@ var punctuationMarks = map[string]struct{}{
 
 // Sentence struct is part of Text struct, and it is the unit of Text Rank
 type Sentence struct {
-	Text string // Almost original text. Text has all the '\n', '\t',
+	Text string // Almost original text, without all the '\n', '\t',
 	// or double space between words
 	NormalisedText string   // Text after apply normaliseSentence
 	Words          []string // Set of unique words representing NormalisedText
+	numberOfWords  int      // Number of words (not unique) in this sentences
 	Score          float64  // The score used to rank most relevant sentences
 }
 
@@ -64,6 +65,7 @@ func (s *Sentence) findSimilarity(anotherS *Sentence) float64 {
 
 type Text struct {
 	Text          string            // Raw, original text
+	numberOfWords int               // Number of words in this text, equal to sum of number of words of all sentences
 	lemmaDict     map[string]string // lemmatization list, used in normalising sentence
 	doc           *prose.Document   // used for sentences segmentation, might be replaced in the future
 	Sentences     []Sentence        // Represent a sentence in a text
@@ -134,61 +136,63 @@ func (t *Text) doRanking() {
 	}
 }
 
+type Sentences struct {
+	sentences []Sentence
+	ind       []int
+}
+
+func (s Sentences) Len() int {
+	return len(s.sentences)
+}
+
+func (s Sentences) Less(i, j int) bool {
+	return s.sentences[i].Score < s.sentences[j].Score
+}
+
+func (s Sentences) Swap(i, j int) {
+	s.sentences[i], s.sentences[j] = s.sentences[j], s.sentences[i]
+	s.ind[i], s.ind[j] = s.ind[j], s.ind[i]
+}
+
 // Two tasks:
 // 	1. Find the top N sentences with the highest score.
 //  2. From that N sentences, order them by position in the text.
 func (t *Text) Summarise(percentage float64) string {
-	numberOfSentences := int(float64(len(t.Sentences)) * percentage)
-	if numberOfSentences < 1 {
-		numberOfSentences = 1
+	numberOfWords := int(float64(t.numberOfWords) * percentage)
+	if numberOfWords < 1 {
+		numberOfWords = 1
 	}
 
-	// Find the top "numberOfSentences" sentences with the highest scores
-	var topSentences []int // only store the index of the sentences, not the sentences itself
+	s := Sentences{
+		sentences: t.Sentences,
+		ind:       make([]int, len(t.Sentences)),
+	}
+	for i := range s.ind {
+		s.ind[i] = i
+	}
 
-	// small note: this algorithm could be optimise further by "divided and conquer"
-	// when finding where to insert/replace the new sentence. However, in this case, it's probably
-	// not really important since numberOfSentences normally < 100.
-	for i := range t.Sentences {
-		sentence := &t.Sentences[i]
+	sort.Sort(sort.Reverse(s))
 
-		if len(topSentences) == 0 { // When there is nothing in topSentences, we append Sentences[i] into the list
-			topSentences = append(topSentences, i)
-		} else if len(topSentences) < numberOfSentences {
-			// When there are less than numberOfSentences, we insert the new sentence into the slice
-			// Also keep the descending order (by score)
-			for j, topInd := range topSentences {
-				if sentence.Score > t.Sentences[topInd].Score {
-					topSentences = append(topSentences, -1)
-					copy(topSentences[(j+1):], topSentences[j:])
-					topSentences[j] = i
-					break
-				} else if j == (len(topSentences) - 1) {
-					topSentences = append(topSentences, i)
-				}
-			}
+	var topInd []int
+
+	totalWords := 0
+	for i := range s.sentences {
+		if totalWords < numberOfWords {
+			totalWords += s.sentences[i].numberOfWords
+			topInd = append(topInd, i)
 		} else {
-			// When there are more or equal to numberOfSentences in the slice,
-			// we will replace instead of insert like in the second case.
-			for j, topInd := range topSentences {
-				if sentence.Score > t.Sentences[topInd].Score {
-					topSentences[j] = i
-					break
-				}
-			}
+			break
 		}
 	}
 
-	// Sort the topSentences by sentence order
-	sort.Ints(topSentences)
+	sort.Sort(sort.IntSlice(topInd))
 
-	// Create the summarised text
 	summarisedText := ""
-	for i := range topSentences {
+	for i, ind := range topInd {
 		if i == 0 {
-			summarisedText = t.Sentences[i].Text
+			summarisedText += t.Sentences[ind].Text
 		} else {
-			summarisedText = summarisedText + " " + t.Sentences[i].Text
+			summarisedText = summarisedText + " " + t.Sentences[ind].Text
 		}
 	}
 
@@ -325,7 +329,7 @@ func NewText(text string, lemmaDict map[string]string) (*Text, error) {
 			// again in findSimilarity
 		}
 		// Generate unique set of words that represent NormalisedText
-		newSentence.Words = tokenizeSentenceToWords(newSentence.NormalisedText, "sort")
+		newSentence.Words, newSentence.numberOfWords = tokenizeSentenceToWords(newSentence.NormalisedText, "sort")
 
 		newText.Sentences = append(newText.Sentences, newSentence)
 		newText.graph.AddNode(i, -1, neighbors...) // in AddNode, neighbor that has the same
@@ -334,6 +338,11 @@ func NewText(text string, lemmaDict map[string]string) (*Text, error) {
 	}
 
 	newText.findSimilarities()
+
+	newText.numberOfWords = 0
+	for i := range newText.Sentences {
+		newText.numberOfWords += newText.Sentences[i].numberOfWords
+	}
 
 	// Find total weight for neighbors to optimise computation time
 	for i := range newText.graph.Nodes {
@@ -346,13 +355,16 @@ func NewText(text string, lemmaDict map[string]string) (*Text, error) {
 }
 
 // Simple tokenize words for sentence algorithm, based in character space ' '
-func tokenizeSentenceToWords(sentence string, opts ...string) []string {
+func tokenizeSentenceToWords(sentence string, opts ...string) ([]string, int) {
 	words := make(map[string]struct{})
 	var word string
+	numberOfWords := 0
+
 	for i, c := range sentence {
 		if c == ' ' {
 			words[word] = struct{}{}
 			word = ""
+			numberOfWords++
 		} else {
 			word = word + string(c)
 		}
@@ -374,7 +386,7 @@ func tokenizeSentenceToWords(sentence string, opts ...string) []string {
 		}
 	}
 
-	return uniqueWords
+	return uniqueWords, numberOfWords
 }
 
 func (t *Text) PrintGraph() {

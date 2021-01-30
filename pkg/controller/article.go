@@ -55,7 +55,7 @@ func (a *Articles) SummariseArticle(article models.ArticleInterface) {
 		if article.GetSummarised() == "" { // Only summarise the text if it has not been summarised
 			t, err := textrank.NewText(article.GetText(), nil)
 			if err == nil {
-				summarisedText := t.Summarise(0.05)
+				summarisedText := t.Summarise(0.1)
 				article.SetSummarised(summarisedText)
 			}
 		}
