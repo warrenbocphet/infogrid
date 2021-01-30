@@ -6,6 +6,7 @@ import (
 	"github.com/vitsensei/infogrid/pkg/models"
 	"github.com/vitsensei/infogrid/pkg/nytimes"
 	"github.com/vitsensei/infogrid/pkg/views/articles"
+	"log"
 	"net/http"
 	"os"
 	"time"
@@ -29,7 +30,18 @@ func main() {
 
 	views := articles.NewView("display", "articles/simple_display")
 
-	ac := controller.NewArticleController(adb, views, 25, nytimesAPI)
+	_ = os.Remove("infogrid_log")
+	logFile, err := os.OpenFile("infogrid_log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+	if err == nil {
+		defer logFile.Close()
+	} else {
+		panic(err)
+	}
+
+	logger := log.New(nil, "logger: ", log.LstdFlags)
+	logger.SetOutput(logFile)
+
+	ac := controller.NewArticleController(adb, views, 25, logger, nytimesAPI)
 
 	go ac.RunPeriodicCapture(4)
 
