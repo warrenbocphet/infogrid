@@ -23,7 +23,7 @@ Root URL: www.infogrid.app
 ## Show articles
 * **URL**
 
-/articles
+    /articles
 
 * **Method**
 
