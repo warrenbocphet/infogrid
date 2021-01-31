@@ -2,6 +2,7 @@ package reuters
 
 import (
 	"github.com/vitsensei/infogrid/pkg/extractor"
+	"github.com/vitsensei/infogrid/pkg/models"
 	"golang.org/x/net/html"
 	"regexp"
 	"strings"
@@ -20,6 +21,43 @@ type Article struct {
 	Text           string
 	SummarisedText string
 	Tags           []string
+}
+
+func (a *Article) GetURL() string {
+	return a.URL
+}
+
+func (a *Article) GetTitle() string {
+	return a.Title
+}
+
+func (a *Article) GetSection() string {
+	return a.Section
+}
+
+func (a *Article) GetDateCreated() string {
+	t, _ := time.Parse(time.RFC3339, a.DateCreated)
+	return (t.UTC()).String()
+}
+
+func (a *Article) SetText(t string) {
+	a.Text = t
+}
+
+func (a *Article) GetText() string {
+	return a.Text
+}
+
+func (a *Article) SetSummarised(s string) {
+	a.SummarisedText = s
+}
+
+func (a *Article) GetSummarised() string {
+	return a.SummarisedText
+}
+
+func (a *Article) GetTags() []string {
+	return a.Tags
 }
 
 type API struct {
@@ -147,8 +185,14 @@ func isContainTitle(node *html.Node) (bool, string) {
 	return false, ""
 }
 
-func (a *API) GetArticles() []Article {
-	return a.articles
+func (a *API) GetArticles() []models.ArticleInterface {
+	var ai []models.ArticleInterface
+
+	for i := range a.articles {
+		ai = append(ai, &a.articles[i])
+	}
+
+	return ai
 }
 
 func isArticleBody(n *html.Node) bool {
