@@ -20,7 +20,7 @@ The application is simply a REST API.
 
 Root URL: www.infogrid.app
 
-```
+```yaml
 servers:
   - url: http://www.infogrid.app/
 paths:
@@ -78,74 +78,3 @@ paths:
               application/json:    
                 Tags: array of string
 ```             
-
-## Show articles
-* **URL**
-
-    /articles
-
-* **Method**
-
-    `GET`
-
-* **Query params (optional)**
-
-    `section=[string]` example: us, world, etc.
-
-    `tag=[string]` example: biden, covid-19, etc.
-
-* **Response**
-
-    `curl "https://www.infogrid.app/articles?section=us&tag=biden"`
-
-```json
-[
-    {
-        "URL": "https://www.nytimes.com/2021/01/29/us/politics/biden-white-house-coronavirus.html",
-        "Title": "In Biden’s White House, Masks, Closed Doors and Empty Halls",
-        "Section": "us",
-        "DateCreated": "2021-01-29 22:42:16 +0000 UTC",
-        "SummarisedText": "WASHINGTON — Senior staff members limit interactions with each other in most offices to a total of 15 minutes in a day.",
-        "Tags": [
-            "white house",
-            "west wing",
-            "biden"
-        ]
-    },
-    {
-        "URL": "https://www.nytimes.com/2021/01/29/us/politics/biden-walter-reed-military.html",
-        "Title": "Biden Visits Walter Reed, the Hospital That Treated Both Him and His Son",
-        "Section": "us",
-        "DateCreated": "2021-01-30 00:08:43 +0000 UTC",
-        "SummarisedText": "WASHINGTON — President Biden spent six grueling months at Walter Reed National Military Medical Center more than 30 years ago, battling two brain aneurysms.",
-        "Tags": [
-            "biden",
-            "iraq",
-            "white house"
-        ]
-    },
-    {
-        "URL": "https://www.nytimes.com/2021/01/29/us/politics/biden-migrant-children-coronavirus.html",
-        "Title": "Federal Court Lifts Block on Trump Policy Expelling Migrant Children at the Border",
-        "Section": "us",
-        "DateCreated": "2021-01-30 02:57:57 +0000 UTC",
-        "SummarisedText": "WASHINGTON — A federal appeals court on Friday lifted a block on a Trump-era policy of rapidly turning away migrant children as public health risks, ramping up pressure on the Biden administration to restore the asylum process at the southwestern border.",
-        "Tags": [
-            "biden",
-            "trump"
-        ]
-    },
-    {
-        "URL": "https://www.nytimes.com/2021/01/30/us/politics/fact-checking-biden-first-week.html",
-        "Title": "Fact-Checking Biden’s First Week in Office",
-        "Section": "us",
-        "DateCreated": "2021-01-30 10:00:13 +0000 UTC",
-        "SummarisedText": "Eleven soldiers at Fort Bliss in Texas remained hospitalized on Friday, one day after they drank antifreeze, believing it was alcohol, during a field training exercise, military officials said.",
-        "Tags": [
-            "biden",
-            "black",
-            "latino"
-        ]
-    }
-]
-```
