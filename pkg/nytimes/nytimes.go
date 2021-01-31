@@ -10,7 +10,6 @@ import (
 	"os"
 	"strings"
 	"sync"
-	"time"
 )
 
 var (
@@ -19,73 +18,9 @@ var (
 	wg                 sync.WaitGroup
 )
 
-/*
-
-	Article represents a single NYTimes article.
-
-	URL: The url to the article
-	Section: Represent the section of the article in NYTimes. Possible value
-		arts, automobiles, books, business, fashion, food, health, home,
-		insider, magazine, movies, nyregion, obituaries, opinion, politics,
-		realestate, science, sports, sundayreview, technology, theater,
-		t-magazine, travel, upshot, us, world
-
-	Title: Title of the article
-	Text: The extract text. Only generated when calling GetText()
-
-*/
-
-type Article struct {
-	URL            string `json:"url"`
-	Title          string `json:"title"`
-	Section        string `json:"section"`
-	DateCreated    string `json:"published_date"`
-	Text           string
-	SummarisedText string
-	Tags           []string
-}
-
-// Get method for models.article to interact with
-func (a *Article) GetURL() string {
-	return a.URL
-}
-
-func (a *Article) GetTitle() string {
-	return a.Title
-}
-
-func (a *Article) GetSection() string {
-	return a.Section
-}
-
-func (a *Article) GetDateCreated() string {
-	t, _ := time.Parse(time.RFC3339, a.DateCreated)
-	return (t.UTC()).String()
-}
-
-func (a *Article) SetText(s string) {
-	a.Text = s
-}
-
-func (a *Article) GetText() string {
-	return a.Text
-}
-
-func (a *Article) GetSummarised() string {
-	return a.SummarisedText
-}
-
-func (a *Article) SetSummarised(s string) {
-	a.SummarisedText = s
-}
-
-func (a *Article) GetTags() []string {
-	return a.Tags
-}
-
 // The json of the response from NYTimes API
 type TopStories struct {
-	Articles []Article `json:"results"`
+	Articles []models.Article `json:"results"`
 }
 
 // The API for other package to interact with
@@ -103,7 +38,7 @@ func NewAPI() *API {
 
 // Used in controller/article to filter out the "non-news" sections
 func (a *API) FilterBySections() {
-	var filteredArticles []Article
+	var filteredArticles []models.Article
 
 	for _, article := range a.TopStories.Articles {
 		for _, allowedSection := range a.allowedSections {
@@ -186,7 +121,7 @@ func ExtractText(url string) (string, error) {
 	return paragraph, nil
 }
 
-func GenerateArticleText(article *Article) {
+func GenerateArticleText(article *models.Article) {
 	defer wg.Done()
 
 	text, _ := ExtractText(article.URL)
@@ -238,7 +173,7 @@ func (a *API) GenerateArticles() error {
 	wg.Wait()
 
 	// Filter out the node that is interactive ~= article.text == ""
-	var articleWithText []Article
+	var articleWithText []models.Article
 	for i := range a.TopStories.Articles {
 		if a.TopStories.Articles[i].Text != "" {
 			articleWithText = append(articleWithText, a.TopStories.Articles[i])
@@ -252,12 +187,6 @@ func (a *API) GenerateArticles() error {
 
 // A Get-Set style function to exposes the the articles array
 // through interface
-func (a *API) GetArticles() []models.ArticleInterface {
-	var ai []models.ArticleInterface
-
-	for i := range a.TopStories.Articles {
-		ai = append(ai, &a.TopStories.Articles[i])
-	}
-
-	return ai
+func (a *API) GetArticles() []models.Article {
+	return a.TopStories.Articles
 }

@@ -20,7 +20,7 @@ var (
 
 type API interface {
 	GenerateArticles() error
-	GetArticles() []models.ArticleInterface
+	GetArticles() []models.Article
 }
 
 func NewArticleController(db *models.ArticleDB, v *articles.View, numberOfArticles int, logger *log.Logger, api ...API) Articles {
@@ -44,19 +44,19 @@ type Articles struct {
 	logger *log.Logger
 }
 
-func (a *Articles) SummariseArticle(article models.ArticleInterface) {
+func (a *Articles) SummariseArticle(article models.Article) {
 	defer wg.Done()
 
 	dbMu.Lock()
-	_, err := a.db.ByURL(article.GetURL()) // Check if the article is already in the DB
+	_, err := a.db.ByURL(article.URL) // Check if the article is already in the DB
 	dbMu.Unlock()
 
 	if err == mongo.ErrNoDocuments { // If true, the article is not in DB
-		if article.GetSummarised() == "" { // Only summarise the text if it has not been summarised
-			t, err := textrank.NewText(article.GetText(), nil)
+		if article.SummarisedText == "" { // Only summarise the text if it has not been summarised
+			t, err := textrank.NewText(article.Text, nil)
 			if err == nil {
 				summarisedText := t.Summarise(0.1)
-				article.SetSummarised(summarisedText)
+				article.SummarisedText = summarisedText
 			}
 		}
 	} else {
@@ -77,7 +77,7 @@ func (a *Articles) CaptureArticles() {
 		err := api.GenerateArticles()
 		if err == nil {
 			for _, article := range api.GetArticles() {
-				a.logger.Println("[INFO] Captured article with title", article.GetTitle())
+				a.logger.Println("[INFO] Captured article with title", article.Title)
 				wg.Add(1)
 				go a.SummariseArticle(article)
 			}
