@@ -190,7 +190,6 @@ func (as Articles) Swap(i, j int) {
 
 // Delete old articles
 func (adb *ArticleDB) CleanOldArticles(numberOfArticles int, logger *log.Logger) {
-	var articles Articles
 	articles, err := adb.AllArticles()
 	if err != nil {
 		return
@@ -200,12 +199,25 @@ func (adb *ArticleDB) CleanOldArticles(numberOfArticles int, logger *log.Logger)
 		return
 	}
 
-	for i := 0; i < len(articles)-numberOfArticles; i++ {
-		_, err = adb.collection.DeleteOne(adb.ctx, bson.M{"url": articles[i].URL})
+	layout := "2006-01-02 15:04:05 -0700 MST"
+	for i := range articles {
+		publishedDate, err := time.Parse(layout, articles[i].PublishedDate)
 		if err != nil {
-			logger.Println("[ERROR] Fail to delete article with title", articles[i].Title)
+			logger.Println(err)
+			continue
+		}
+
+		if time.Since(publishedDate).Hours() > 72 {
+			_, err = adb.collection.DeleteOne(adb.ctx, bson.M{"url": articles[i].URL})
+			if err != nil {
+				logger.Println("[ERROR] Fail to delete article with title", articles[i].Title)
+			} else {
+				logger.Println("[INFO] Delete article with title", articles[i].Title)
+			}
 		} else {
-			logger.Println("[INFO] Delete article with title", articles[i].Title)
+			// Since adb.AllArticles() return articles sorted by their published date (old to new),
+			// we can just break the loop when first encounter articles that is less than 3 days old.
+			break
 		}
 	}
 }

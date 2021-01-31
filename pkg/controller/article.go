@@ -148,7 +148,6 @@ func (a *Articles) ShowArticles(w http.ResponseWriter, _ *http.Request) {
 
 	err = a.ArticleView.Render(w, data)
 	must(err)
-
 }
 
 func (a *Articles) GetArticles(w http.ResponseWriter, r *http.Request) {
