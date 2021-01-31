@@ -7,13 +7,12 @@ A simple news aggregation. Currently support NYTimes and Reuters.
 ```cmd/main.go``` should provide a basic understanding of the package workflow
 
 # Dependancies
-For routing: ```github.com/gorilla/mux```
-
-Official MongoDB driver: ```go.mongodb.org/mongo-driver/mongo```
-
-Extracting keywords, might remove in the future: ```gopkg.in/jdkato/prose.v2```
-
-For parsing HTML file: ```golang.org/x/net/html```
+| Package                           | Description                         |
+|-----------------------------------|-------------------------------------|
+| github.com/gorilla/mux            | routing                             |
+| go.mongodb.org/mongo-driver/mongo | database (MongoDB) driver           |
+| gopkg.in/jdkato/prose.v2          | text -> sentences, extract keywords |
+| golang.org/x/net/html             | parsing HTML file                   |
 
 # Usage
 The application is simply a REST API.
