@@ -20,6 +20,65 @@ The application is simply a REST API.
 
 Root URL: www.infogrid.app
 
+```
+servers:
+  - url: http://www.infogrid.app/
+paths:
+  /articles:
+    get:
+      summary: List all articles
+      parameters:
+        - name: section
+          in: query
+          description: section where the articles comes from (us, world, technology, etc.)
+          required: false
+          schema:
+            type: string
+
+        - name: tag
+          in: query
+          description: tag that the article contains
+          required: false
+          schema:
+            type: string
+
+      responses:
+        '200':
+          description: An array of articles
+          content:
+            application/json:    
+              Articles:
+                Article:
+                  URL: string
+                  Title: string
+                  Section: string
+                  DateCreated: "2021-01-30 00:08:43 +0000 UTC"
+                  SummarisedText: string
+                  Tags: list of string
+
+  /sections:
+      get:
+        summary: List all available sections
+  
+        responses:
+          '200':
+            description: An array of available sections
+            content:
+              application/json:    
+                Sections: array of string
+
+  /tags:
+      get:
+        summary: List all available tags
+  
+        responses:
+          '200':
+            description: An array of available tags
+            content:
+              application/json:    
+                Tags: array of string
+```             
+
 ## Show articles
 * **URL**
 
@@ -39,7 +98,7 @@ Root URL: www.infogrid.app
 
     `curl "https://www.infogrid.app/articles?section=us&tag=biden"`
 
-```
+```json
 [
     {
         "URL": "https://www.nytimes.com/2021/01/29/us/politics/biden-white-house-coronavirus.html",
@@ -90,48 +149,3 @@ Root URL: www.infogrid.app
     }
 ]
 ```
-
-* **Sample call**
-
-    `$ curl "https://www.infogrid.app/articles`
-
-    `$ curl "https://www.infogrid.app/articles?section=us"`
-
-    `$ curl "https://www.infogrid.app/articles?tag=biden"`
-
-    `$ curl "https://www.infogrid.app/articles?section=us&tag=biden"`
-
-## Show available sections
-
-* **URL**
-
-    /sections
-
-* **Method**
-
-    `GET`
-
-* **Response**
-
-    `$ curl "https://www.infogrid.app/sections"`
-
-    `["technology","world","us","business"]`
-
-## Show available tags
-
-* **URL**
-
-    /tags
-
-* **Method**
-
-    `GET`
-
-* **Response**
-
-    `$ curl "https://www.infogrid.app/tags"`
-
-```
-["britain","jimenez","republican","armored division","tesla","latino","josh drobnyk","tibetan","grape-nuts","south carolina","south africa","gamestop","duhamel","kouchner","colonel payne","william beaumont army medical center","greene","food group","biggs","elon musk","russia","university","senate","biden","michelmore","black","tashi","british","parker","putin","musk","west wing","robinhood","portland","melbourne","trump","french","bryan","mccarthy","chinese","covid-19","iraq","gainesville","astrazeneca","white house","yellen","australian open","davis","navalny","gosar","heyman","victoria","united states","barra"]
-```
-
