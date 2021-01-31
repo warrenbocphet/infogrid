@@ -72,7 +72,7 @@ paths:
   
         responses:
           '200':
-            description: An array of available tags
+            description: An array of available tags (biden, trump, covid-19, etc.)
             content:
               application/json:    
                 Tags: array of string
