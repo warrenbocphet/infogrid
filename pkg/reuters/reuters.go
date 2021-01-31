@@ -2,6 +2,7 @@ package reuters
 
 import (
 	"github.com/vitsensei/infogrid/pkg/extractor"
+	"github.com/vitsensei/infogrid/pkg/models"
 	"golang.org/x/net/html"
 	"regexp"
 	"strings"
@@ -12,19 +13,9 @@ const (
 	reuterBasedURL = "https://www.reuters.com/"
 )
 
-type Article struct {
-	URL            string `json:"url"`
-	Title          string `json:"title"`
-	Section        string `json:"section"`
-	DateCreated    string `json:"published_date"`
-	Text           string
-	SummarisedText string
-	Tags           []string
-}
-
 type API struct {
 	urls     map[string]string
-	articles []Article
+	articles []models.Article
 }
 
 func NewAPI() *API {
@@ -44,7 +35,7 @@ func (a *API) GenerateArticles() error {
 
 		for i := range articles {
 			articles[i].Section = section
-			articles[i].DateCreated = time.Now().String()
+			articles[i].PublishedDate = time.Now().String()
 
 			text, err := ExtractText(articles[i].URL)
 			if err == nil {
@@ -64,8 +55,8 @@ func (a *API) GenerateArticles() error {
 	return nil
 }
 
-func generateArticles(url string) ([]Article, error) {
-	var articles []Article
+func generateArticles(url string) ([]models.Article, error) {
+	var articles []models.Article
 
 	bodyString, err := extractor.ExtractTextFromURL(url)
 
@@ -93,7 +84,7 @@ func generateArticles(url string) ([]Article, error) {
 		for c := node.FirstChild; c != nil; c = c.NextSibling {
 			isContainedLink, link := isContainLink(c)
 			if isContainedLink {
-				newArticle := Article{URL: link}
+				newArticle := models.Article{URL: link}
 
 				for t := c.FirstChild; t != nil; t = t.NextSibling {
 					isContainedTitle, title := isContainTitle(t)
@@ -147,7 +138,7 @@ func isContainTitle(node *html.Node) (bool, string) {
 	return false, ""
 }
 
-func (a *API) GetArticles() []Article {
+func (a *API) GetArticles() []models.Article {
 	return a.articles
 }
 

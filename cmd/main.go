@@ -5,6 +5,7 @@ import (
 	"github.com/vitsensei/infogrid/pkg/controller"
 	"github.com/vitsensei/infogrid/pkg/models"
 	"github.com/vitsensei/infogrid/pkg/nytimes"
+	"github.com/vitsensei/infogrid/pkg/reuters"
 	"github.com/vitsensei/infogrid/pkg/views/articles"
 	"log"
 	"net/http"
@@ -28,6 +29,8 @@ func main() {
 	nytimesAPI := nytimes.NewAPI()
 	must(err)
 
+	reuterAPI := reuters.NewAPI()
+
 	views := articles.NewView("display", "articles/simple_display")
 
 	_ = os.Remove("infogrid_log")
@@ -41,7 +44,7 @@ func main() {
 	logger := log.New(nil, "logger: ", log.LstdFlags)
 	logger.SetOutput(logFile)
 
-	ac := controller.NewArticleController(adb, views, 25, logger, nytimesAPI)
+	ac := controller.NewArticleController(adb, views, 25, logger, nytimesAPI, reuterAPI)
 
 	go ac.RunPeriodicCapture(4)
 

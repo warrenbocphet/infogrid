@@ -59,52 +59,18 @@ func (adb *ArticleDB) DestructiveReset() error {
 
 // The document that goes into the (mongo) database.
 type Article struct {
-	URL            string   `bson:"url,omitempty"`
-	Title          string   `bson:"title,omitempty"`
-	Section        string   `bson:"section,omitempty"`
-	DateCreated    string   `bson:"date_created,omitempty"`
+	URL            string   `bson:"url,omitempty" json:"url"`
+	Title          string   `bson:"title,omitempty" json:"title"`
+	Section        string   `bson:"section,omitempty" json:"section"`
+	PublishedDate  string   `bson:"date_created,omitempty" json:"published_date"`
 	Text           string   `bson:"text,omitempty" json:"-"`
 	SummarisedText string   `bson:"summarised_text,omitempty"`
 	Tags           []string `bson:"tags,omitempty"`
 }
 
-// The interface for all articles.
-// We need this interface instead of using a struct from other package
-// there are more than one news source and each agency might have different
-// structure for their article.
-type ArticleInterface interface {
-	GetURL() string
-	GetTitle() string
-	GetSection() string
-	GetDateCreated() string
-	SetText(string)
-	GetText() string
-	SetSummarised(string)
-	GetSummarised() string
-	GetTags() []string
-}
-
 // Insert an article/document into the mongo database
-func (adb *ArticleDB) InsertArticle(a ArticleInterface) error {
-	url := a.GetURL()
-	title := a.GetTitle()
-	section := a.GetSection()
-	text := a.GetText()
-	summarisedText := a.GetSummarised()
-	dateCreated := a.GetDateCreated()
-	tags := a.GetTags()
-
-	article := Article{
-		URL:            url,
-		Title:          title,
-		Section:        section,
-		Text:           text,
-		SummarisedText: summarisedText,
-		DateCreated:    dateCreated,
-		Tags:           tags,
-	}
-
-	_, err := adb.collection.InsertOne(adb.ctx, article)
+func (adb *ArticleDB) InsertArticle(a Article) error {
+	_, err := adb.collection.InsertOne(adb.ctx, a)
 	if err != nil {
 		return err
 	}
@@ -205,12 +171,12 @@ func (as Articles) Len() int {
 
 func (as Articles) Less(i, j int) bool {
 	layout := "2006-01-02 15:04:05 -0700 MST"
-	time1, err := time.Parse(layout, as[i].DateCreated)
+	time1, err := time.Parse(layout, as[i].PublishedDate)
 	if err != nil {
 		return true
 	}
 
-	time2, err := time.Parse(layout, as[j].DateCreated)
+	time2, err := time.Parse(layout, as[j].PublishedDate)
 	if err != nil {
 		return true
 	}
